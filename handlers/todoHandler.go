@@ -12,6 +12,7 @@ import (
 
 type TodoHandler struct {
 	Service services.Todo
+	services.TodoDetails
 }
 
 // Create Todo request structure
