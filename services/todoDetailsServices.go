@@ -13,8 +13,10 @@ import (
 type TodoDetails struct {
 	ID          string    `json:"id,omitempty" bson:"_id,omitempty"`
 	TodoID      string    `json:"todo_id,omitempty" bson:"_todo_id,omitempty"`
-	TaskDetails string    `json:"task_details,omitempty" bson:"_task_details,omitempty"`
-	Notes       string    `json:"notes,omitempty" bson:"_notes,omitempty"`
+	TaskDetails string    `json:"task_details" bson:"_task_details"`
+	Notes       string    `json:"notes" bson:"_notes"`
+	Status      string    `json:"status" bson:"_status"`
+	Priority    string    `json:"priority" bson:"_priority"`
 	CreatedAt   time.Time `json:"created_at,omitempty" bson:"_created_at,omitempty"`
 	UpdatedAt   time.Time `json:"updated_at,omitempty" bson:"_updated_at,omitempty"`
 }
@@ -78,6 +80,8 @@ func (t *TodoDetails) InsertTodoDetails(entry TodoDetails) error {
 		TodoID:      entry.TodoID,
 		TaskDetails: entry.TaskDetails,
 		Notes:       entry.Notes,
+		Status:      entry.Status,
+		Priority:    entry.Priority,
 		CreatedAt:   time.Now(),
 		UpdatedAt:   time.Now(),
 	})
@@ -102,6 +106,8 @@ func (t *TodoDetails) UpdateTodoDetails(id string, entry TodoDetails) (*mongo.Up
 		{Key: "$set", Value: bson.D{
 			{Key: "_task_details", Value: entry.TaskDetails},
 			{Key: "_notes", Value: entry.Notes},
+			{Key: "_status", Value: entry.Status},
+			{Key: "_priority", Value: entry.Priority},
 			{Key: "_updated_at", Value: time.Now()},
 		}},
 	}

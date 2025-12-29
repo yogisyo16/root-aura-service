@@ -23,6 +23,8 @@ type CreateTodoDetailsRequest struct {
 	TodoID      string `json:"todo_id"`
 	TaskDetails string `json:"task_details"`
 	Notes       string `json:"notes"`
+	Status      string `json:"status"`
+	Priority    string `json:"priority"`
 }
 
 func (h *TodoDetailsHandler) getTodoDetails(w http.ResponseWriter, r *http.Request) {
