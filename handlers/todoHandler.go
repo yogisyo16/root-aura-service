@@ -104,10 +104,33 @@ func (h *TodoHandler) getTodoByID(w http.ResponseWriter, r *http.Request) {
 }
 
 // Create todo
+func parseDateTime(dateStr string) (time.Time, error) {
+	// Try parsing as full RFC3339 first (2006-01-02T15:04:05Z)
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err == nil {
+		return t, nil
+	}
+
+	// Try parsing as date only (2006-01-02)
+	t, err = time.Parse("2006-01-02", dateStr)
+	if err == nil {
+		// If only date is provided, set time to 00:00:00
+		return t, nil
+	}
+
+	// Try parsing as datetime without timezone (2006-01-02T15:04:05)
+	t, err = time.Parse("2006-01-02T15:04:05", dateStr)
+	if err == nil {
+		return t, nil
+	}
+
+	return time.Time{}, err
+}
+
+// Create todo
 func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	var req CreateTodoRequest
 
-	// Decode the request body
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Println(err)
@@ -120,32 +143,55 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dateStart, err := time.Parse(time.RFC3339, req.DateStart)
+	// Parse dates
+	dateStart, err := parseDateTime(req.DateStart)
 	if err != nil {
 		log.Println(err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date format. Use ISO 8601 format (e.g., 2025-11-20T14:30:00Z)",
+			Msg:  "Invalid date_start format. Use YYYY-MM-DD or ISO 8601 format",
 			Code: 400,
 		})
 		return
 	}
 
-	// Parse the date_due string to time.Time
-	dateDue, err := time.Parse(time.RFC3339, req.DateDue)
+	dateDue, err := parseDateTime(req.DateDue)
 	if err != nil {
 		log.Println(err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date format. Use ISO 8601 format (e.g., 2025-11-20T14:30:00Z)",
+			Msg:  "Invalid date_due format. Use YYYY-MM-DD or ISO 8601 format",
 			Code: 400,
 		})
 		return
 	}
 
-	// Create the Todo with parsed time.Time
+	// IMPORTANT: Validate date logic - start must be before or equal to due
+	if dateStart.After(dateDue) {
+		log.Println("Start date is after due date")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Start date cannot be after due date",
+			Code: 400,
+		})
+		return
+	}
+
+	// Additional validation: check if task is not empty
+	if len(req.Task) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Task name is required",
+			Code: 400,
+		})
+		return
+	}
+
+	// Create the Todo
 	newTodo := services.Todo{
 		Task:      req.Task,
 		DateStart: dateStart,
@@ -153,7 +199,6 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		Completed: req.Completed,
 	}
 
-	// Insert the new todo into the database
 	err = h.Service.InsertTodo(newTodo)
 	if err != nil {
 		log.Println(err)
@@ -166,7 +211,6 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Respond with success
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(201)
 	json.NewEncoder(w).Encode(Response{
@@ -175,7 +219,7 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Logic to update todo by id
+// Also update the updateTodo function with the same validation
 func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	var req UpdateTodoRequest
@@ -192,26 +236,48 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dateStart, err := time.Parse(time.RFC3339, req.DateStart)
+	dateStart, err := parseDateTime(req.DateStart)
 	if err != nil {
 		log.Println(err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
-			Msg:  "Date start not set, invalid",
+			Msg:  "Invalid date_start format",
 			Code: 400,
 		})
 		return
 	}
 
-	// Parse the date_due string to time.Time
-	dateDue, err := time.Parse(time.RFC3339, req.DateDue)
+	dateDue, err := parseDateTime(req.DateDue)
 	if err != nil {
 		log.Println(err)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date format",
+			Msg:  "Invalid date_due format",
+			Code: 400,
+		})
+		return
+	}
+
+	// Validate date logic
+	if dateStart.After(dateDue) {
+		log.Println("Start date is after due date")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Start date cannot be after due date",
+			Code: 400,
+		})
+		return
+	}
+
+	// Validate task
+	if len(req.Task) == 0 {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Task name is required",
 			Code: 400,
 		})
 		return
@@ -220,7 +286,7 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 	updateTodo := services.Todo{
 		Task:      req.Task,
 		DateStart: dateStart,
-		DateDue:   dateDue, // Now it's time.Time
+		DateDue:   dateDue,
 		Completed: req.Completed,
 	}
 
