@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -65,4 +66,24 @@ func (u *User) InsertUser(entry User) error {
 	}
 
 	return nil
+}
+
+func (u *User) GetUserByID(id string) (User, error) {
+	collection := retunrUserCollection("users")
+	var user User
+
+	// Convert string id to MongoDB ObjectID
+	mongoID, err := primitive.ObjectIDFromHex(id)
+	if err != nil {
+		log.Println("Invalid Hex ID:", err)
+		return User{}, err
+	}
+
+	// Use mongoID in the query instead of the raw string id
+	err = collection.FindOne(context.TODO(), bson.M{"_id": mongoID}).Decode(&user)
+	if err != nil {
+		log.Println("Error finding user: ", err)
+		return User{}, err
+	}
+	return user, nil
 }

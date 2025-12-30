@@ -1,0 +1,111 @@
+package handlers
+
+import (
+	"encoding/json"
+	"log"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-mongo-todos/services"
+)
+
+type TodoDetailsHandler struct {
+	Service services.TodoDetails
+}
+
+func NewTodoDetailsHandler(service services.TodoDetails) *TodoDetailsHandler {
+	return &TodoDetailsHandler{
+		Service: service,
+	}
+}
+
+type CreateTodoDetailsRequest struct {
+	TodoID      string `json:"todo_id"`
+	TaskDetails string `json:"task_details"`
+	Notes       string `json:"notes"`
+	Status      string `json:"status"`
+	Priority    string `json:"priority"`
+}
+
+func (h *TodoDetailsHandler) getTodoDetails(w http.ResponseWriter, r *http.Request) {
+	todoDetails, err := h.Service.GetAllTodosDetails()
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		return
+	}
+
+	response := struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []services.TodoDetails `json:"items"`
+		} `json:"data"`
+	}{
+		Code: 200,
+		Data: struct {
+			Items []services.TodoDetails `json:"items"`
+		}{
+			Items: todoDetails,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *TodoDetailsHandler) getTodoDetailsByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	todoDetail, err := h.Service.GetTodoDetailsById(id)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(todoDetail)
+}
+
+func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Request) {
+	var req CreateTodoDetailsRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Invalid request body",
+			Code: 400,
+		})
+		return
+	}
+
+	newTodoDetails := services.TodoDetails{
+		TodoID:      req.TodoID,
+		TaskDetails: req.TaskDetails,
+		Notes:       req.Notes,
+	}
+
+	err = h.Service.InsertTodoDetails(newTodoDetails)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Failed to create todo details",
+			Code: 500,
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(Response{
+		Msg:  "Successfully Created Todo Details",
+		Code: 201,
+	})
+}

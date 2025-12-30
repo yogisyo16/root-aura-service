@@ -27,6 +27,7 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler) *chi.Mux {
 			// User Routes
 			router.Post("/users/create", userHandler.insertUser)
 			router.Get("/users", userHandler.getAllUsers)
+			router.Get("/users/{id}", userHandler.getUserByID)
 
 			// Todo Routes
 			router.Get("/healthcheck", HealthCheck)

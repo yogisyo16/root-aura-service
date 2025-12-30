@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/go-mongo-todos/services"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -85,7 +86,49 @@ func (h *UserHandler) getAllUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	response := struct {
+		Code int `json:"code"`
+		Data struct {
+			Items []services.User `json:"items"`
+		} `json:"data"`
+	}{
+		Code: 200,
+		Data: struct {
+			Items []services.User `json:"items"`
+		}{
+			Items: users,
+		},
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(users)
+	json.NewEncoder(w).Encode(response)
+}
+
+func (h *UserHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	user, err := h.Service.GetUserByID(id)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	response := struct {
+		Code int `json:"code"`
+		Data struct {
+			Items services.User `json:"items"`
+		} `json:"data"`
+	}{
+		Code: 200,
+		Data: struct {
+			Items services.User `json:"items"`
+		}{
+			Items: user,
+		},
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(response)
 }
