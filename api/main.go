@@ -6,9 +6,9 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/go-mongo-todos/db"
-	"github.com/go-mongo-todos/handlers"
-	"github.com/go-mongo-todos/services"
+	"github.com/yogisyo16/root-aura-service/db"
+	"github.com/yogisyo16/root-aura-service/handlers"
+	"github.com/yogisyo16/root-aura-service/services"
 )
 
 type Application struct {
