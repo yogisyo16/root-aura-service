@@ -23,9 +23,9 @@ Available features:
 - Marking tasks as completed or incomplete. (✔️)
 
 In-Progress feature:
-- User authentication and authorization. (X)
-- User profile management. (X)
-- User collaboration and sharing. (X)
-- User notification system. (X)
-- User email verification. (X)
-- User password reset. (X)
+- User authentication and authorization. (✖️)
+- User profile management. (✖️)
+- User collaboration and sharing. (✖️)
+- User notification system. (✖️)
+- User email verification. (✖️)
+- User password reset. (✖️)
