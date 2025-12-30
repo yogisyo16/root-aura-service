@@ -1,4 +1,4 @@
-module github.com/go-mongo-todos
+module github.com/yogisyo16/root-aura-service
 
 go 1.23
 
