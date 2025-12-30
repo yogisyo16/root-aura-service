@@ -18,6 +18,7 @@ type TodoHandler struct {
 // Create Todo request structure
 type CreateTodoRequest struct {
 	Task      string `json:"task"`
+	DateStart string `json:"date_start"`
 	DateDue   string `json:"date_due"`
 	Completed bool   `json:"completed"`
 }
@@ -25,6 +26,7 @@ type CreateTodoRequest struct {
 // Update Todo request structure
 type UpdateTodoRequest struct {
 	Task      string `json:"task"`
+	DateStart string `json:"date_start"`
 	DateDue   string `json:"date_due"`
 	Completed bool   `json:"completed"`
 }
@@ -118,6 +120,18 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dateStart, err := time.Parse(time.RFC3339, req.DateStart)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Invalid date format. Use ISO 8601 format (e.g., 2025-11-20T14:30:00Z)",
+			Code: 400,
+		})
+		return
+	}
+
 	// Parse the date_due string to time.Time
 	dateDue, err := time.Parse(time.RFC3339, req.DateDue)
 	if err != nil {
@@ -134,6 +148,7 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	// Create the Todo with parsed time.Time
 	newTodo := services.Todo{
 		Task:      req.Task,
+		DateStart: dateStart,
 		DateDue:   dateDue,
 		Completed: req.Completed,
 	}
@@ -177,6 +192,18 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	dateStart, err := time.Parse(time.RFC3339, req.DateStart)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Date start not set, invalid",
+			Code: 400,
+		})
+		return
+	}
+
 	// Parse the date_due string to time.Time
 	dateDue, err := time.Parse(time.RFC3339, req.DateDue)
 	if err != nil {
@@ -192,6 +219,7 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 
 	updateTodo := services.Todo{
 		Task:      req.Task,
+		DateStart: dateStart,
 		DateDue:   dateDue, // Now it's time.Time
 		Completed: req.Completed,
 	}
