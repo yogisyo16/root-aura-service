@@ -20,11 +20,11 @@ func NewTodoDetailsHandler(service services.TodoDetails) *TodoDetailsHandler {
 }
 
 type CreateTodoDetailsRequest struct {
-	TodoID      string `json:"todo_id"`
-	TaskDetails string `json:"task_details"`
-	Notes       string `json:"notes"`
-	Status      string `json:"status"`
-	Priority    string `json:"priority"`
+	TodoID          string `json:"todo_id"`
+	TaskDetails     string `json:"task_details"`
+	NotesDetails    string `json:"notes_details"`
+	StatusDetails   string `json:"status_details"`
+	PriorityDetails string `json:"priority_details"`
 }
 
 func (h *TodoDetailsHandler) getTodoDetails(w http.ResponseWriter, r *http.Request) {
@@ -85,9 +85,11 @@ func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Re
 	}
 
 	newTodoDetails := services.TodoDetails{
-		TodoID:      req.TodoID,
-		TaskDetails: req.TaskDetails,
-		Notes:       req.Notes,
+		TodoID:          req.TodoID,
+		TaskDetails:     req.TaskDetails,
+		NotesDetails:    req.NotesDetails,
+		StatusDetails:   req.StatusDetails,
+		PriorityDetails: req.PriorityDetails,
 	}
 
 	err = h.Service.InsertTodoDetails(newTodoDetails)
@@ -108,4 +110,33 @@ func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Re
 		Msg:  "Successfully Created Todo Details",
 		Code: 201,
 	})
+}
+
+func (h *TodoDetailsHandler) deleteTodoDetails(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	err := h.Service.DeleteTodoDetails(id)
+	if err != nil {
+		errorRes := Response{
+			Msg:  "Error",
+			Code: 304,
+		}
+		json.NewEncoder(w).Encode(errorRes)
+		w.WriteHeader(errorRes.Code)
+		return
+	}
+
+	res := Response{
+		Msg:  "Succesfully Deleted Todo",
+		Code: 200,
+	}
+
+	jsonStr, err := json.Marshal(res)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(res.Code)
+	w.Write(jsonStr)
 }

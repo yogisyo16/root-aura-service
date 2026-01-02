@@ -10,7 +10,7 @@ type Response struct {
 	Code int
 }
 
-func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler) *chi.Mux {
+func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDetailsHandler *TodoDetailsHandler) *chi.Mux {
 	router := chi.NewRouter()
 
 	router.Use(cors.Handler(cors.Options{
@@ -36,6 +36,11 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler) *chi.Mux {
 			router.Post("/todos/create", todoHandler.createTodo)
 			router.Put("/todos/update/{id}", todoHandler.updateTodo)
 			router.Delete("/todos/delete/{id}", todoHandler.deleteTodo)
+
+			// Todo Details Routes
+			router.Get("/todos/tododetails", todoTodoDetailsHandler.getTodoDetails)
+			router.Post("/todos/tododetails/create", todoTodoDetailsHandler.createTodoDetails)
+			router.Delete("/todos/tododetails/delete/{id}", todoTodoDetailsHandler.deleteTodoDetails)
 		})
 
 		router.Route("/v2", func(router chi.Router) {

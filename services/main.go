@@ -1,6 +1,7 @@
 package services
 
 type Models struct {
-	Todo Todo
-	User User
+	Todo    Todo
+	User    User
+	Details TodoDetails
 }
