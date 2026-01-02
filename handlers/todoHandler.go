@@ -11,8 +11,8 @@ import (
 )
 
 type TodoHandler struct {
-	Service services.Todo
-	services.TodoDetails
+	Service        services.Todo
+	DetailsService services.TodoDetails // Add this
 }
 
 // Create Todo request structure
@@ -31,10 +31,23 @@ type UpdateTodoRequest struct {
 	Completed bool   `json:"completed"`
 }
 
+type TodoWithDetails struct {
+	ID          string                `json:"id,omitempty"`
+	UserID      string                `json:"user_id"`
+	Task        string                `json:"task"`
+	DateStart   time.Time             `json:"date_start,omitempty"`
+	DateDue     time.Time             `json:"date_due,omitempty"`
+	Completed   bool                  `json:"completed"`
+	TodoDetails *services.TodoDetails `json:"todo_details"`
+	CreatedAt   time.Time             `json:"created_at,omitempty"`
+	UpdatedAt   time.Time             `json:"update_at,omitempty"`
+}
+
 // Generic response structure
-func NewTodoHandler(service services.Todo) *TodoHandler {
+func NewTodoHandler(service services.Todo, detailsService services.TodoDetails) *TodoHandler {
 	return &TodoHandler{
-		Service: service,
+		Service:        service,
+		DetailsService: detailsService, // Initialize this
 	}
 }
 
@@ -56,6 +69,7 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logic to get all todos
+// Updated with details todos included
 func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 	todos, err := h.Service.GetAllTodos()
 	if err != nil {
@@ -68,18 +82,42 @@ func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 		todos = []services.Todo{}
 	}
 
+	// Fetch details for each todo
+	var todosWithDetails []TodoWithDetails
+	for _, todo := range todos {
+		todoWithDetails := TodoWithDetails{
+			ID:          todo.ID,
+			UserID:      todo.UserID,
+			Task:        todo.Task,
+			DateStart:   todo.DateStart,
+			DateDue:     todo.DateDue,
+			Completed:   todo.Completed,
+			CreatedAt:   todo.CreatedAt,
+			UpdatedAt:   todo.UpdatedAt,
+			TodoDetails: nil, // Default to nil (will show as null in JSON)
+		}
+
+		// Try to get the details for this todo
+		details, err := h.DetailsService.GetTodoDetailsByTodoId(todo.ID)
+		if err == nil && details.ID != "" {
+			todoWithDetails.TodoDetails = &details
+		}
+
+		todosWithDetails = append(todosWithDetails, todoWithDetails)
+	}
+
 	// Response structure wrapper
 	response := struct {
 		Code int `json:"code"`
 		Data struct {
-			Items []services.Todo `json:"items"`
+			Items []TodoWithDetails `json:"items"`
 		} `json:"data"`
 	}{
 		Code: 200,
 		Data: struct {
-			Items []services.Todo `json:"items"`
+			Items []TodoWithDetails `json:"items"`
 		}{
-			Items: todos,
+			Items: todosWithDetails,
 		},
 	}
 
@@ -89,18 +127,39 @@ func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 }
 
 // Logic to get todo by id
+// Updated with details todos included sorted by id
 func (h *TodoHandler) getTodoByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
 	todo, err := h.Service.GetTodoById(id)
 	if err != nil {
 		log.Println(err)
+		w.WriteHeader(404)
 		return
+	}
+
+	// Create response with details
+	todoWithDetails := TodoWithDetails{
+		ID:          todo.ID,
+		UserID:      todo.UserID,
+		Task:        todo.Task,
+		DateStart:   todo.DateStart,
+		DateDue:     todo.DateDue,
+		Completed:   todo.Completed,
+		CreatedAt:   todo.CreatedAt,
+		UpdatedAt:   todo.UpdatedAt,
+		TodoDetails: nil, // Default to nil
+	}
+
+	// Try to get the details for this todo
+	details, err := h.DetailsService.GetTodoDetailsByTodoId(todo.ID)
+	if err == nil && details.ID != "" {
+		todoWithDetails.TodoDetails = &details
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	json.NewEncoder(w).Encode(todo)
+	json.NewEncoder(w).Encode(todoWithDetails)
 }
 
 // Create todo

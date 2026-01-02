@@ -25,17 +25,19 @@ func main() {
 	// 2. Initialize the services with the database client
 	todoService := services.New(mongoClient)
 	userService := services.User{} // Uses the same client set in services.New()
+	detailsService := services.NewTodoDetailsService(mongoClient)
 
 	// 3. Initialize the handlers with their respective services
-	todoHandler := handlers.NewTodoHandler(todoService)
+	todoHandler := handlers.NewTodoHandler(todoService, detailsService) // Pass both services
 	userHandler := handlers.NewUserHandler(userService)
+	detailsHandler := handlers.NewTodoDetailsHandler(detailsService)
 
-	// 4. Create the router and pass both handlers to it
-	router := handlers.CreateRouter(todoHandler, userHandler)
+	// 4. Create the router and pass all handlers to it
+	router := handlers.CreateRouter(todoHandler, userHandler, detailsHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080" // Default to 8080 if not set
+		port = "8080"
 	}
 
 	serverAddr := fmt.Sprintf(":%s", port)

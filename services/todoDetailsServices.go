@@ -11,14 +11,14 @@ import (
 )
 
 type TodoDetails struct {
-	ID          string    `json:"id,omitempty" bson:"_id,omitempty"`
-	TodoID      string    `json:"todo_id,omitempty" bson:"_todo_id,omitempty"`
-	TaskDetails string    `json:"task_details" bson:"_task_details"`
-	Notes       string    `json:"notes" bson:"_notes"`
-	Status      string    `json:"status" bson:"_status"`
-	Priority    string    `json:"priority" bson:"_priority"`
-	CreatedAt   time.Time `json:"created_at,omitempty" bson:"_created_at,omitempty"`
-	UpdatedAt   time.Time `json:"updated_at,omitempty" bson:"_updated_at,omitempty"`
+	ID              string    `json:"id,omitempty" bson:"_id,omitempty"`
+	TodoID          string    `json:"todo_id,omitempty" bson:"_todo_id,omitempty"`
+	TaskDetails     string    `json:"task_details" bson:"_task_details"`
+	NotesDetails    string    `json:"notes_details" bson:"_notes_details"`
+	StatusDetails   string    `json:"status_details" bson:"_status_details"`
+	PriorityDetails string    `json:"priority_details" bson:"_priority_details"`
+	CreatedAt       time.Time `json:"created_at,omitempty" bson:"_created_at,omitempty"`
+	UpdatedAt       time.Time `json:"updated_at,omitempty" bson:"_updated_at,omitempty"`
 }
 
 func NewTodoDetailsService(mongo *mongo.Client) TodoDetails {
@@ -77,13 +77,13 @@ func (t *TodoDetails) GetTodoDetailsById(id string) (TodoDetails, error) {
 func (t *TodoDetails) InsertTodoDetails(entry TodoDetails) error {
 	collection := returnTodoDetailsCollection("todo_details")
 	_, err := collection.InsertOne(context.TODO(), TodoDetails{
-		TodoID:      entry.TodoID,
-		TaskDetails: entry.TaskDetails,
-		Notes:       entry.Notes,
-		Status:      entry.Status,
-		Priority:    entry.Priority,
-		CreatedAt:   time.Now(),
-		UpdatedAt:   time.Now(),
+		TodoID:          entry.TodoID,
+		TaskDetails:     entry.TaskDetails,
+		NotesDetails:    entry.NotesDetails,
+		StatusDetails:   entry.StatusDetails,
+		PriorityDetails: entry.PriorityDetails,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
 	})
 
 	if err != nil {
@@ -105,9 +105,9 @@ func (t *TodoDetails) UpdateTodoDetails(id string, entry TodoDetails) (*mongo.Up
 	update := bson.D{
 		{Key: "$set", Value: bson.D{
 			{Key: "_task_details", Value: entry.TaskDetails},
-			{Key: "_notes", Value: entry.Notes},
-			{Key: "_status", Value: entry.Status},
-			{Key: "_priority", Value: entry.Priority},
+			{Key: "_notes_details", Value: entry.NotesDetails},
+			{Key: "_status_details", Value: entry.StatusDetails},
+			{Key: "_priority_details", Value: entry.PriorityDetails},
 			{Key: "_updated_at", Value: time.Now()},
 		}},
 	}
@@ -142,4 +142,21 @@ func (t *TodoDetails) DeleteTodoDetails(id string) error {
 		return err
 	}
 	return nil
+}
+
+func (t *TodoDetails) GetTodoDetailsByTodoId(todoId string) (TodoDetails, error) {
+	collection := returnTodoDetailsCollection("todo_details")
+	var todoDetail TodoDetails
+
+	err := collection.FindOne(context.TODO(), bson.M{"_todo_id": todoId}).Decode(&todoDetail)
+	if err != nil {
+		// If not found, return empty struct (not an error)
+		if err == mongo.ErrNoDocuments {
+			return TodoDetails{}, nil
+		}
+		log.Println(err)
+		return TodoDetails{}, err
+	}
+
+	return todoDetail, nil
 }
