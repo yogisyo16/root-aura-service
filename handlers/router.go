@@ -15,7 +15,7 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDe
 
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CRSF-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
@@ -35,6 +35,7 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDe
 			router.Get("/todos/{id}", todoHandler.getTodoByID)
 			router.Post("/todos/create", todoHandler.createTodo)
 			router.Put("/todos/update/{id}", todoHandler.updateTodo)
+			router.Patch("/todos/{id}/complete", todoHandler.toggleComplete)
 			router.Delete("/todos/delete/{id}", todoHandler.deleteTodo)
 
 			// Todo Details Routes

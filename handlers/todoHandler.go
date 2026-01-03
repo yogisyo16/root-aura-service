@@ -35,8 +35,8 @@ type TodoWithDetails struct {
 	ID          string                `json:"id,omitempty"`
 	UserID      string                `json:"user_id"`
 	Task        string                `json:"task"`
-	DateStart   time.Time             `json:"date_start,omitempty"`
-	DateDue     time.Time             `json:"date_due,omitempty"`
+	DateStart   *time.Time            `json:"date_start"`
+	DateDue     *time.Time            `json:"date_due"`
 	Completed   bool                  `json:"completed"`
 	TodoDetails *services.TodoDetails `json:"todo_details"`
 	CreatedAt   time.Time             `json:"created_at,omitempty"`
@@ -202,49 +202,58 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse dates
-	dateStart, err := parseDateTime(req.DateStart)
-	if err != nil {
-		log.Println(err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date_start format. Use YYYY-MM-DD or ISO 8601 format",
-			Code: 400,
-		})
-		return
-	}
-
-	dateDue, err := parseDateTime(req.DateDue)
-	if err != nil {
-		log.Println(err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date_due format. Use YYYY-MM-DD or ISO 8601 format",
-			Code: 400,
-		})
-		return
-	}
-
-	// IMPORTANT: Validate date logic - start must be before or equal to due
-	if dateStart.After(dateDue) {
-		log.Println("Start date is after due date")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Start date cannot be after due date",
-			Code: 400,
-		})
-		return
-	}
-
 	// Additional validation: check if task is not empty
 	if len(req.Task) == 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
 			Msg:  "Task name is required",
+			Code: 400,
+		})
+		return
+	}
+
+	var dateStart *time.Time
+	var dateDue *time.Time
+
+	// Parse dates only if provided
+	if req.DateStart != "" {
+		ds, err := parseDateTime(req.DateStart)
+		if err != nil {
+			log.Println(err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(Response{
+				Msg:  "Invalid date_start format. Use YYYY-MM-DD or ISO 8601 format",
+				Code: 400,
+			})
+			return
+		}
+		dateStart = &ds
+	}
+
+	if req.DateDue != "" {
+		dd, err := parseDateTime(req.DateDue)
+		if err != nil {
+			log.Println(err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(Response{
+				Msg:  "Invalid date_due format. Use YYYY-MM-DD or ISO 8601 format",
+				Code: 400,
+			})
+			return
+		}
+		dateDue = &dd
+	}
+
+	// IMPORTANT: Validate date logic - start must be before or equal to due (only if both are provided)
+	if dateStart != nil && dateDue != nil && dateStart.After(*dateDue) {
+		log.Println("Start date is after due date")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Start date cannot be after due date",
 			Code: 400,
 		})
 		return
@@ -295,48 +304,58 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	dateStart, err := parseDateTime(req.DateStart)
-	if err != nil {
-		log.Println(err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date_start format",
-			Code: 400,
-		})
-		return
-	}
-
-	dateDue, err := parseDateTime(req.DateDue)
-	if err != nil {
-		log.Println(err)
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Invalid date_due format",
-			Code: 400,
-		})
-		return
-	}
-
-	// Validate date logic
-	if dateStart.After(dateDue) {
-		log.Println("Start date is after due date")
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(400)
-		json.NewEncoder(w).Encode(Response{
-			Msg:  "Start date cannot be after due date",
-			Code: 400,
-		})
-		return
-	}
-
 	// Validate task
 	if len(req.Task) == 0 {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(400)
 		json.NewEncoder(w).Encode(Response{
 			Msg:  "Task name is required",
+			Code: 400,
+		})
+		return
+	}
+
+	var dateStart *time.Time
+	var dateDue *time.Time
+
+	// Parse dates only if provided
+	if req.DateStart != "" {
+		ds, err := parseDateTime(req.DateStart)
+		if err != nil {
+			log.Println(err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(Response{
+				Msg:  "Invalid date_start format",
+				Code: 400,
+			})
+			return
+		}
+		dateStart = &ds
+	}
+
+	if req.DateDue != "" {
+		dd, err := parseDateTime(req.DateDue)
+		if err != nil {
+			log.Println(err)
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(Response{
+				Msg:  "Invalid date_due format",
+				Code: 400,
+			})
+			return
+		}
+		dateDue = &dd
+	}
+
+	// Validate date logic (only if both are provided)
+	if dateStart != nil && dateDue != nil && dateStart.After(*dateDue) {
+		log.Println("Start date is after due date")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Start date cannot be after due date",
 			Code: 400,
 		})
 		return
@@ -365,6 +384,45 @@ func (h *TodoHandler) updateTodo(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(Response{
 		Msg:  "Successfully Updated Todo",
+		Code: 200,
+	})
+}
+
+func (h *TodoHandler) toggleComplete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	// Get the current todo
+	todo, err := h.Service.GetTodoById(id)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(404)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Todo not found",
+			Code: 404,
+		})
+		return
+	}
+
+	// Toggle the completed status
+	todo.Completed = !todo.Completed
+
+	_, err = h.Service.UpdatedTodo(id, todo)
+	if err != nil {
+		log.Println(err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(500)
+		json.NewEncoder(w).Encode(Response{
+			Msg:  "Failed to toggle completion status",
+			Code: 500,
+		})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(Response{
+		Msg:  "Successfully toggled completion status",
 		Code: 200,
 	})
 }

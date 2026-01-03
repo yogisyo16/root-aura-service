@@ -11,14 +11,14 @@ import (
 )
 
 type Todo struct {
-	ID        string    `json:"id,omitempty" bson:"_id,omitempty"`
-	UserID    string    `json:"user_id" bson:"_user_id"`
-	Task      string    `json:"task" bson:"_task"`
-	DateStart time.Time `json:"date_start,omitempty" bson:"_date_start,omitempty"`
-	DateDue   time.Time `json:"date_due,omitempty" bson:"_date_due,omitempty"`
-	Completed bool      `json:"completed" bson:"_completed"`
-	CreatedAt time.Time `json:"created_at,omitempty" bson:"_created_at,omitempty"`
-	UpdatedAt time.Time `json:"update_at,omitempty" bson:"_update_at,omitempty"`
+	ID        string     `json:"id,omitempty" bson:"_id,omitempty"`
+	UserID    string     `json:"user_id" bson:"_user_id"`
+	Task      string     `json:"task" bson:"_task"`
+	DateStart *time.Time `json:"date_start,omitempty" bson:"_date_start,omitempty"`
+	DateDue   *time.Time `json:"date_due,omitempty" bson:"_date_due,omitempty"`
+	Completed bool       `json:"completed" bson:"_completed"`
+	CreatedAt time.Time  `json:"created_at,omitempty" bson:"_created_at,omitempty"`
+	UpdatedAt time.Time  `json:"update_at,omitempty" bson:"_update_at,omitempty"`
 }
 
 var client *mongo.Client
