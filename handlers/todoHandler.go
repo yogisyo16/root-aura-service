@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -71,6 +73,34 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 // Logic to get all todos
 // Updated with details todos included
 func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
+	sortBy := r.URL.Query().Get("sort_by")       // Field to sort by (e.g., "created_at", "date_due", "task")
+	sortOrder := r.URL.Query().Get("sort_order") // "ASC" or "DESC"
+	pageStr := r.URL.Query().Get("page")         // Page number (default: 1)
+	limitStr := r.URL.Query().Get("limit")       // Items per page (default: 10)
+
+	// Set default values
+	if sortBy == "" {
+		sortBy = "created_at" // Default sort by created_at
+	}
+	if sortOrder == "" {
+		sortOrder = "ASC" // Default to descending (newest first)
+	}
+
+	// Parse pagination parameters
+	page := 1
+	if pageStr != "" {
+		if p, err := strconv.Atoi(pageStr); err == nil && p > 0 {
+			page = p
+		}
+	}
+
+	limit := 10
+	if limitStr != "" {
+		if l, err := strconv.Atoi(limitStr); err == nil && l > 0 && l <= 100 {
+			limit = l // Max 100 items per page
+		}
+	}
+
 	todos, err := h.Service.GetAllTodos()
 	if err != nil {
 		log.Println(err)
@@ -94,10 +124,9 @@ func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 			Completed:   todo.Completed,
 			CreatedAt:   todo.CreatedAt,
 			UpdatedAt:   todo.UpdatedAt,
-			TodoDetails: nil, // Default to nil (will show as null in JSON)
+			TodoDetails: nil,
 		}
 
-		// Try to get the details for this todo
 		details, err := h.DetailsService.GetTodoDetailsByTodoId(todo.ID)
 		if err == nil && details.ID != "" {
 			todoWithDetails.TodoDetails = &details
@@ -106,20 +135,94 @@ func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 		todosWithDetails = append(todosWithDetails, todoWithDetails)
 	}
 
-	// Response structure wrapper
+	// Apply sorting
+	sort.Slice(todosWithDetails, func(i, j int) bool {
+		var compareResult bool
+
+		switch sortBy {
+		case "task":
+			compareResult = todosWithDetails[i].Task < todosWithDetails[j].Task
+		case "date_start":
+			// Handle nil dates - put them at the end
+			if todosWithDetails[i].DateStart == nil {
+				return sortOrder == "DESC"
+			}
+			if todosWithDetails[j].DateStart == nil {
+				return sortOrder == "ASC"
+			}
+			compareResult = todosWithDetails[i].DateStart.Before(*todosWithDetails[j].DateStart)
+		case "date_due":
+			if todosWithDetails[i].DateDue == nil {
+				return sortOrder == "DESC"
+			}
+			if todosWithDetails[j].DateDue == nil {
+				return sortOrder == "ASC"
+			}
+			compareResult = todosWithDetails[i].DateDue.Before(*todosWithDetails[j].DateDue)
+		case "completed":
+			compareResult = !todosWithDetails[i].Completed && todosWithDetails[j].Completed
+		case "updated_at":
+			compareResult = todosWithDetails[i].UpdatedAt.Before(todosWithDetails[j].UpdatedAt)
+		default: // "created_at" is default
+			compareResult = todosWithDetails[i].CreatedAt.Before(todosWithDetails[j].CreatedAt)
+		}
+
+		// Reverse the comparison if descending order
+		if sortOrder == "DESC" {
+			return !compareResult
+		}
+		return compareResult
+	})
+
+	// Calculate pagination
+	totalItems := len(todosWithDetails)
+	totalPages := (totalItems + limit - 1) / limit // Ceiling division
+
+	// Calculate start and end indices for the current page
+	startIndex := (page - 1) * limit
+	endIndex := startIndex + limit
+
+	// Handle out of bounds
+	if startIndex >= totalItems {
+		startIndex = 0
+		endIndex = 0
+		page = 1
+	}
+	if endIndex > totalItems {
+		endIndex = totalItems
+	}
+
+	// Get the paginated slice
+	paginatedTodos := []TodoWithDetails{}
+	if startIndex < totalItems {
+		paginatedTodos = todosWithDetails[startIndex:endIndex]
+	}
+
+	// Response structure with pagination metadata
 	response := struct {
 		Code int `json:"code"`
 		Data struct {
-			Items []TodoWithDetails `json:"items"`
+			Items      []TodoWithDetails `json:"items"`
+			Pagination struct {
+				CurrentPage  int  `json:"current_page"`
+				TotalPages   int  `json:"total_pages"`
+				TotalItems   int  `json:"total_items"`
+				ItemsPerPage int  `json:"items_per_page"`
+				HasNext      bool `json:"has_next"`
+				HasPrev      bool `json:"has_prev"`
+			} `json:"pagination"`
 		} `json:"data"`
 	}{
 		Code: 200,
-		Data: struct {
-			Items []TodoWithDetails `json:"items"`
-		}{
-			Items: todosWithDetails,
-		},
 	}
+
+	response.Data.Items = paginatedTodos
+	response.Data.Pagination.CurrentPage = page
+	response.Data.Pagination.TotalPages = totalPages
+	response.Data.Pagination.TotalItems = totalItems
+	response.Data.Pagination.ItemsPerPage = limit
+	response.Data.Pagination.HasNext = page < totalPages
+	response.Data.Pagination.HasPrev = page > 1
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
