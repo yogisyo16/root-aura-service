@@ -10,6 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// Database Todo : Struct modal
 type Todo struct {
 	ID        string     `json:"id,omitempty" bson:"_id,omitempty"`
 	UserID    string     `json:"user_id" bson:"_user_id"`
