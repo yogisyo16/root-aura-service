@@ -69,6 +69,21 @@ func (h *TodoDetailsHandler) getTodoDetailsByID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(todoDetail)
 }
 
+func (h *TodoDetailsHandler) getTodoDetailsByTodoId(w http.ResponseWriter, r *http.Request) {
+	todo_id := chi.URLParam(r, "todo_id")
+
+	todoDetail, err := h.Service.GetTodoDetailsByTodoId(todo_id)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(todoDetail)
+}
+
 func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Request) {
 	var req CreateTodoDetailsRequest
 

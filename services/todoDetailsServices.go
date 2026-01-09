@@ -73,6 +73,23 @@ func (t *TodoDetails) GetTodoDetailsById(id string) (TodoDetails, error) {
 	return todoDetail, nil
 }
 
+func (t *TodoDetails) GetTodoDetailsByTodoId(todoId string) (TodoDetails, error) {
+	collection := returnTodoDetailsCollection("todo_details")
+	var todoDetail TodoDetails
+
+	err := collection.FindOne(context.TODO(), bson.M{"_todo_id": todoId}).Decode(&todoDetail)
+	if err != nil {
+		// If not found, return empty struct (not an error)
+		if err == mongo.ErrNoDocuments {
+			return TodoDetails{}, nil
+		}
+		log.Println(err)
+		return TodoDetails{}, err
+	}
+
+	return todoDetail, nil
+}
+
 // InsertTodoDetails - create todo details
 func (t *TodoDetails) InsertTodoDetails(entry TodoDetails) error {
 	collection := returnTodoDetailsCollection("todo_details")
@@ -142,21 +159,4 @@ func (t *TodoDetails) DeleteTodoDetails(id string) error {
 		return err
 	}
 	return nil
-}
-
-func (t *TodoDetails) GetTodoDetailsByTodoId(todoId string) (TodoDetails, error) {
-	collection := returnTodoDetailsCollection("todo_details")
-	var todoDetail TodoDetails
-
-	err := collection.FindOne(context.TODO(), bson.M{"_todo_id": todoId}).Decode(&todoDetail)
-	if err != nil {
-		// If not found, return empty struct (not an error)
-		if err == mongo.ErrNoDocuments {
-			return TodoDetails{}, nil
-		}
-		log.Println(err)
-		return TodoDetails{}, err
-	}
-
-	return todoDetail, nil
 }

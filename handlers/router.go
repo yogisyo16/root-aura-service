@@ -40,6 +40,8 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDe
 
 			// Todo Details Routes
 			router.Get("/todos/tododetails", todoTodoDetailsHandler.getTodoDetails)
+			router.Get("/todos/tododetails/{id}", todoTodoDetailsHandler.getTodoDetailsByID)
+			router.Get("/todos/tododetails/todoid/{todo_id}", todoTodoDetailsHandler.getTodoDetailsByTodoId)
 			router.Post("/todos/tododetails/create", todoTodoDetailsHandler.createTodoDetails)
 			router.Delete("/todos/tododetails/delete/{id}", todoTodoDetailsHandler.deleteTodoDetails)
 		})
