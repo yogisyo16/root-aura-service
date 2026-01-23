@@ -20,7 +20,6 @@ func NewTodoDetailsHandler(service services.TodoDetails) *TodoDetailsHandler {
 }
 
 type CreateTodoDetailsRequest struct {
-	TodoID          string `json:"todo_id"`
 	TaskDetails     string `json:"task_details"`
 	NotesDetails    string `json:"notes_details"`
 	StatusDetails   string `json:"status_details"`
@@ -85,6 +84,12 @@ func (h *TodoDetailsHandler) getTodoDetailsByTodoId(w http.ResponseWriter, r *ht
 }
 
 func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Request) {
+	todoID := chi.URLParam(r, "todo_id")
+	if todoID == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{Msg: "Todo ID is required", Code: 400})
+		return
+	}
 	var req CreateTodoDetailsRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -100,7 +105,7 @@ func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Re
 	}
 
 	newTodoDetails := services.TodoDetails{
-		TodoID:          req.TodoID,
+		TodoID:          todoID,
 		TaskDetails:     req.TaskDetails,
 		NotesDetails:    req.NotesDetails,
 		StatusDetails:   req.StatusDetails,
