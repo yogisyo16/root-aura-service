@@ -23,6 +23,7 @@ Available features:
 - Marking tasks as completed or incomplete. (✔️)
 
 In-Progress feature:
+- Adding details to tasks. (✖️)
 - User authentication and authorization. (✖️)
 - User profile management. (✖️)
 - User collaboration and sharing. (✖️)

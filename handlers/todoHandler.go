@@ -382,12 +382,19 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(201)
-	json.NewEncoder(w).Encode(Response{
+	response := struct {
+		Msg  string        `json:"msg"`
+		Code int           `json:"code"`
+		Data services.Todo `json:"data"`
+	}{
 		Msg:  "Successfully Created Todo",
 		Code: 201,
-	})
+		Data: newTodo,
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+	json.NewEncoder(w).Encode(response)
 }
 
 // Also update the updateTodo function with the same validation
