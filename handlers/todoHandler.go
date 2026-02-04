@@ -370,7 +370,7 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 		Completed: req.Completed,
 	}
 
-	err = h.Service.InsertTodo(newTodo)
+	createdTodo, err := h.Service.InsertTodo(newTodo)
 	if err != nil {
 		log.Println(err)
 		w.Header().Set("Content-Type", "application/json")
@@ -389,7 +389,7 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	}{
 		Msg:  "Successfully Created Todo",
 		Code: 201,
-		Data: newTodo,
+		Data: *createdTodo, // <--- Use the object from the DB, not the request
 	}
 
 	w.Header().Set("Content-Type", "application/json")

@@ -74,22 +74,29 @@ func (t *Todo) GetTodoById(id string) (Todo, error) {
 }
 
 // InsertTodo
-func (t *Todo) InsertTodo(entry Todo) error {
+func (t *Todo) InsertTodo(entry Todo) (*Todo, error) {
 	collection := returnTodosCollection("todos")
-	_, err := collection.InsertOne(context.TODO(), Todo{
+	now := time.Now()
+	docToInsert := Todo{
 		Task:      entry.Task,
 		DateStart: entry.DateStart,
 		DateDue:   entry.DateDue,
 		Completed: entry.Completed,
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-	})
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
 
+	res, err := collection.InsertOne(context.TODO(), docToInsert)
 	if err != nil {
 		log.Println("Error: ", err)
-		return err
+		return nil, err
 	}
-	return nil
+
+	if oid, ok := res.InsertedID.(primitive.ObjectID); ok {
+		docToInsert.ID = oid.Hex()
+	}
+
+	return &docToInsert, nil
 }
 
 // UpdatedTodo
