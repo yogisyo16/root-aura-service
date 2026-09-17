@@ -24,13 +24,14 @@ func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDe
 
 	router.Route("/api", func(router chi.Router) {
 		router.Route("/v1", func(router chi.Router) {
+			// Health Check
+			router.Get("/healthcheck", HealthCheck)
 			// User Routes
 			router.Post("/users/create", userHandler.insertUser)
 			router.Get("/users", userHandler.getAllUsers)
 			router.Get("/users/{id}", userHandler.getUserByID)
 
 			// Todo Routes
-			router.Get("/healthcheck", HealthCheck)
 			router.Get("/todos", todoHandler.getTodos)
 			router.Get("/todos/{id}", todoHandler.getTodoByID)
 			router.Post("/todos/create", todoHandler.createTodo)
