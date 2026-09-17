@@ -11,6 +11,11 @@ import (
 )
 
 // Database Todo : Struct modal
+//
+// TODO(auth): UserID exists on the model but nothing currently sets it
+// (createTodo never populates it) or filters by it (GetAllTodos returns
+// every todo regardless of owner). Once JWT auth lands, todo reads/writes
+// should be scoped to the authenticated user's ID. See docs/BACKLOG.md.
 type Todo struct {
 	ID        string     `json:"id,omitempty" bson:"_id,omitempty"`
 	UserID    string     `json:"user_id" bson:"_user_id"`
@@ -22,8 +27,14 @@ type Todo struct {
 	UpdatedAt time.Time  `json:"update_at,omitempty" bson:"_update_at,omitempty"`
 }
 
+// client is the shared Mongo client for the whole services package, set once
+// here and reused by userServices.go and todoDetailsServices.go too — there's
+// only ever one client for the process's lifetime.
 var client *mongo.Client
 
+// New sets the package-level Mongo client and returns a zero-value Todo
+// service. Called once at startup from api/main.go; the User and
+// TodoDetails services rely on the same client being set here first.
 func New(mongo *mongo.Client) Todo {
 	client = mongo
 	return Todo{}

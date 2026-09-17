@@ -5,14 +5,25 @@ import (
 	"github.com/go-chi/cors"
 )
 
+// Response is the shared "simple" reply shape used by most write endpoints
+// (create/update/delete): {"Msg": "...", "Code": 200}. Read endpoints mostly
+// use an ad-hoc {code, data: {items}} shape instead — see docs/API.md for
+// the per-endpoint breakdown of this inconsistency.
 type Response struct {
 	Msg  string
 	Code int
 }
 
+// CreateRouter builds the full chi router: CORS config, then every route
+// under /api/v1 (the working API) and /api/v2 (currently just a health
+// check placeholder for future versioning). No auth middleware is attached
+// yet — every route below is public. See docs/BACKLOG.md for the planned
+// JWT middleware and which routes should stay public once it lands.
 func CreateRouter(todoHandler *TodoHandler, userHandler *UserHandler, todoTodoDetailsHandler *TodoDetailsHandler) *chi.Mux {
 	router := chi.NewRouter()
 
+	// Authorization is already allowed here so the CORS config won't need
+	// touching once JWT auth (Authorization: Bearer <token>) is added.
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://*", "http://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"},

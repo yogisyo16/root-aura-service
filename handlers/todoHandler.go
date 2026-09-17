@@ -72,6 +72,12 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 
 // Logic to get all todos
 // Updated with details todos included
+//
+// Note: this loads the entire todos collection, joins each one's details
+// with a separate query, sorts in-memory (sort.Slice), then paginates the
+// already-sorted slice — everything after the initial Mongo fetch happens
+// in Go rather than via $sort/$skip/$limit. Fine at small scale; revisit if
+// the todos collection grows large. See docs/BACKLOG.md.
 func (h *TodoHandler) getTodos(w http.ResponseWriter, r *http.Request) {
 	sortBy := r.URL.Query().Get("sort_by")       // Field to sort by (e.g., "created_at", "date_due", "task")
 	sortOrder := r.URL.Query().Get("sort_order") // "ASC" or "DESC"
@@ -363,6 +369,9 @@ func (h *TodoHandler) createTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create the Todo
+	// TODO(auth): UserID is never set here, so every todo is currently
+	// unowned/global. Once JWT auth lands, set it from the authenticated
+	// user's ID (pulled off the request context). See docs/BACKLOG.md.
 	newTodo := services.Todo{
 		Task:      req.Task,
 		DateStart: dateStart,
@@ -543,6 +552,9 @@ func (h *TodoHandler) deleteTodo(w http.ResponseWriter, r *http.Request) {
 
 	err := h.Service.DeleteTodo(id)
 	if err != nil {
+		// NOTE: 304 Not Modified is conventionally a caching signal, not an
+		// error status — 404 (not found) or 500 (DB error) would be more
+		// standard here depending on the actual failure. See docs/BACKLOG.md.
 		errorRes := Response{
 			Msg:  "Error",
 			Code: 304,

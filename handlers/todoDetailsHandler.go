@@ -68,6 +68,9 @@ func (h *TodoDetailsHandler) getTodoDetailsByID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(todoDetail)
 }
 
+// getTodoDetailsByTodoId returns 200 with an empty TodoDetails object (not
+// a 404) when the todo has no details yet — see the matching note on
+// services.TodoDetails.GetTodoDetailsByTodoId.
 func (h *TodoDetailsHandler) getTodoDetailsByTodoId(w http.ResponseWriter, r *http.Request) {
 	todo_id := chi.URLParam(r, "todo_id")
 
@@ -137,6 +140,8 @@ func (h *TodoDetailsHandler) deleteTodoDetails(w http.ResponseWriter, r *http.Re
 
 	err := h.Service.DeleteTodoDetails(id)
 	if err != nil {
+		// Same non-standard 304-on-error pattern as deleteTodo in
+		// todoHandler.go — see docs/BACKLOG.md.
 		errorRes := Response{
 			Msg:  "Error",
 			Code: 304,

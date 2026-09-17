@@ -10,6 +10,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// TodoDetails is a one-to-one(ish) extension of Todo, joined by TodoID —
+// a todo can exist without a TodoDetails document (see
+// GetTodoDetailsByTodoId below).
 type TodoDetails struct {
 	ID              string    `json:"id,omitempty" bson:"_id,omitempty"`
 	TodoID          string    `json:"todo_id,omitempty" bson:"_todo_id,omitempty"`
@@ -77,6 +80,9 @@ func (t *TodoDetails) GetTodoDetailsByTodoId(todoId string) (TodoDetails, error)
 	collection := returnTodoDetailsCollection("todo_details")
 	var todoDetail TodoDetails
 
+	// Intentional: a todo without details yet is a normal state, not an
+	// error, so callers check `details.ID != ""` rather than an error
+	// return to know whether details exist for this todo.
 	err := collection.FindOne(context.TODO(), bson.M{"_todo_id": todoId}).Decode(&todoDetail)
 	if err != nil {
 		// If not found, return empty struct (not an error)
