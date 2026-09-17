@@ -11,10 +11,17 @@ import (
 	"github.com/yogisyo16/root-aura-service/services"
 )
 
+// Application groups the service layer for anything that wants a single
+// handle on all of them. Not currently constructed/used anywhere below —
+// main wires the individual services (todoService, userService,
+// detailsService) straight into the handlers instead.
 type Application struct {
 	Models services.Models
 }
 
+// main wires the whole app together: connect to Mongo, construct the
+// services, hand them to the handlers, build the router, start listening.
+// See docs/HANDLERS.md and docs/SERVICES.md for what each layer does.
 func main() {
 	// 1. Connect to the database
 	mongoClient, err := db.ConnectToMongo()

@@ -20,7 +20,6 @@ func NewTodoDetailsHandler(service services.TodoDetails) *TodoDetailsHandler {
 }
 
 type CreateTodoDetailsRequest struct {
-	TodoID          string `json:"todo_id"`
 	TaskDetails     string `json:"task_details"`
 	NotesDetails    string `json:"notes_details"`
 	StatusDetails   string `json:"status_details"`
@@ -69,7 +68,31 @@ func (h *TodoDetailsHandler) getTodoDetailsByID(w http.ResponseWriter, r *http.R
 	json.NewEncoder(w).Encode(todoDetail)
 }
 
+// getTodoDetailsByTodoId returns 200 with an empty TodoDetails object (not
+// a 404) when the todo has no details yet — see the matching note on
+// services.TodoDetails.GetTodoDetailsByTodoId.
+func (h *TodoDetailsHandler) getTodoDetailsByTodoId(w http.ResponseWriter, r *http.Request) {
+	todo_id := chi.URLParam(r, "todo_id")
+
+	todoDetail, err := h.Service.GetTodoDetailsByTodoId(todo_id)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(404)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(todoDetail)
+}
+
 func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Request) {
+	todoID := chi.URLParam(r, "todo_id")
+	if todoID == "" {
+		w.WriteHeader(400)
+		json.NewEncoder(w).Encode(Response{Msg: "Todo ID is required", Code: 400})
+		return
+	}
 	var req CreateTodoDetailsRequest
 
 	err := json.NewDecoder(r.Body).Decode(&req)
@@ -85,7 +108,7 @@ func (h *TodoDetailsHandler) createTodoDetails(w http.ResponseWriter, r *http.Re
 	}
 
 	newTodoDetails := services.TodoDetails{
-		TodoID:          req.TodoID,
+		TodoID:          todoID,
 		TaskDetails:     req.TaskDetails,
 		NotesDetails:    req.NotesDetails,
 		StatusDetails:   req.StatusDetails,
@@ -117,6 +140,8 @@ func (h *TodoDetailsHandler) deleteTodoDetails(w http.ResponseWriter, r *http.Re
 
 	err := h.Service.DeleteTodoDetails(id)
 	if err != nil {
+		// Same non-standard 304-on-error pattern as deleteTodo in
+		// todoHandler.go — see docs/BACKLOG.md.
 		errorRes := Response{
 			Msg:  "Error",
 			Code: 304,

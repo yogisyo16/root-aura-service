@@ -21,6 +21,7 @@ Hopefully with this project it can grow and become more like notion, but more re
 Available features:
 - CRUD operations for tasks, including adding, editing, and deleting tasks. (✔️)
 - Marking tasks as completed or incomplete. (✔️)
+- Adding details to tasks. (✔️)
 
 In-Progress feature:
 - User authentication and authorization. (✖️)
@@ -29,3 +30,17 @@ In-Progress feature:
 - User notification system. (✖️)
 - User email verification. (✖️)
 - User password reset. (✖️)
+
+## Documentation
+- [`docs/API.md`](docs/API.md) — full endpoint reference, request/response shapes, example `curl` calls
+- [`docs/SERVICES.md`](docs/SERVICES.md) — the data-access layer, one section per service
+- [`docs/HANDLERS.md`](docs/HANDLERS.md) — the HTTP layer, one section per handler
+- [`docs/RUNNING.md`](docs/RUNNING.md) — local setup (macOS/Linux/Windows), with Docker for MongoDB
+- [`docs/BACKLOG.md`](docs/BACKLOG.md) — the JWT auth implementation plan and other known issues found while documenting
+
+
+## AI Usage this far
+- For adding documentation (Learning and reminder inline code)
+- For any recomendation in the code (Not yet take full control code base)
+   - Why still not taking the full control? This code is for learning, the next step AI here only to help me understand and make some reminder on what i code, since i made this project for a long term learning projects. So AI for now not the center of this code.
+   - Do you use AI? Of course for my job projects, since it need us to do fast and accurate, so AI mainly on my job project. But learning? Not yet, still need to learn the basic and base.

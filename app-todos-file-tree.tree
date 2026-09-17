@@ -2,12 +2,21 @@
   - main.go
 - db
   - db.go
+- docs
+  - API.md
+  - BACKLOG.md
+  - HANDLERS.md
+  - RUNNING.md
+  - SERVICES.md
 - handlers
   - router.go
+  - todoDetailsHandler.go
   - todoHandler.go
   - userHandler.go
 - services
+  - authService.go
   - main.go
+  - todoDetailsServices.go
   - todoService.go
   - userServices.go
 - .env

@@ -20,6 +20,10 @@ func NewUserHandler(service services.User) *UserHandler {
 	}
 }
 
+// insertUser handles POST /users/create. This is the one place password
+// hashing happens (bcrypt, default cost) — the service layer just stores
+// whatever Password it's given, so any future caller of
+// services.User.InsertUser must hash the password itself first.
 func (h *UserHandler) insertUser(w http.ResponseWriter, r *http.Request) {
 	var newUser services.User
 
@@ -110,6 +114,9 @@ func (h *UserHandler) getUserByID(w http.ResponseWriter, r *http.Request) {
 
 	user, err := h.Service.GetUserByID(id)
 	if err != nil {
+		// TODO: this logs and returns without calling w.WriteHeader, so a
+		// failed lookup currently responds 200 with an empty body instead
+		// of a proper 404. See docs/BACKLOG.md.
 		log.Println(err)
 		return
 	}
