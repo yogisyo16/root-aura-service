@@ -21,7 +21,7 @@ type User struct {
 	FirstName string    `json:"first_name,omitempty" bson:"_first_name,omitempty"`
 	LastName  string    `json:"last_name,omitempty" bson:"_last_name,omitempty"`
 	Email     string    `json:"email,omitempty" bson:"_email,omitempty"`
-	Password  string    `json:"password,omitempty" bson:"_password,omitempty"`
+	Password  string    `json:"-" bson:"_password,omitempty"`
 	CreatedAt time.Time `json:"created_at,omitempty" bson:"_created_at,omitempty"`
 	UpdatedAt time.Time `json:"update_at,omitempty" bson:"_update_at,omitempty"`
 }
