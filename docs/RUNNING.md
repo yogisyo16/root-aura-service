@@ -18,15 +18,15 @@ git clone https://github.com/yogisyo16/root-aura-service.git
 cd root-aura-service
 ```
 
-`.env` is committed to the repo with working local defaults — nothing to configure out of the box:
+`.env` is gitignored — create it from the template:
+```bash
+cp .env.example .env
 ```
-BINARY=mongoTodosYogis
-DB_CONTAINER_NAME=mongodb-todos-yogis
-MONGO_DB=todos_db
-MONGO_DB_USERNAME=admin
-MONGO_DB_PASSWORD=password
-PORT=65510
-```
+Then fill in the two values the template leaves for you:
+- `MONGO_DB_PASSWORD` — any password; Mongo's root user is created with it on first `docker compose up`. (The examples below use `password`.)
+- `JWT_SECRET` — generate one with `openssl rand -base64 48`.
+
+The rest (`BINARY`, `DB_CONTAINER_NAME`, `MONGO_DB`, `MONGO_DB_USERNAME`, `PORT`) has working local defaults.
 
 ## 2. Start MongoDB
 
@@ -44,11 +44,11 @@ mongodb://admin:password@localhost:27017/todos_db?authSource=admin&readPreferenc
 
 ## 3. Run the API
 
-The app reads `PORT`, `MONGO_DB_USERNAME`, `MONGO_DB_PASSWORD` from the environment — there's no `.env`-loading library in the code (`os.Getenv` only), so export them in the shell you run it from.
+The app reads `PORT`, `MONGO_DB_USERNAME`, `MONGO_DB_PASSWORD`, `JWT_SECRET` from the environment — there's no `.env`-loading library in the code (`os.Getenv` only), so export them in the shell you run it from.
 
 **macOS / Linux:**
 ```bash
-export PORT=65510 MONGO_DB_USERNAME=admin MONGO_DB_PASSWORD=password
+export PORT=65510 MONGO_DB_USERNAME=admin MONGO_DB_PASSWORD=password JWT_SECRET="$(openssl rand -base64 48)"
 go run ./api
 ```
 or via the Makefile: `make build && make start` (`make restart` does both).
@@ -58,6 +58,7 @@ or via the Makefile: `make build && make start` (`make restart` does both).
 $env:PORT="65510"
 $env:MONGO_DB_USERNAME="admin"
 $env:MONGO_DB_PASSWORD="password"
+$env:JWT_SECRET="<long random string>"
 go run ./api
 ```
 or build first:
