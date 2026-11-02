@@ -20,14 +20,24 @@ func NewUserHandler(service services.User) *UserHandler {
 	}
 }
 
+// createUserRequest is the signup body. It exists separately from
+// services.User because User.Password is tagged `json:"-"` (so the hash is
+// never sent back out), which also means User can't read a password in.
+type createUserRequest struct {
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
+}
+
 // insertUser handles POST /users/create. This is the one place password
 // hashing happens (bcrypt, default cost) — the service layer just stores
 // whatever Password it's given, so any future caller of
 // services.User.InsertUser must hash the password itself first.
 func (h *UserHandler) insertUser(w http.ResponseWriter, r *http.Request) {
-	var newUser services.User
+	var req createUserRequest
 
-	err := json.NewDecoder(r.Body).Decode(&newUser)
+	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Println(err)
 		errorRes := Response{
@@ -41,7 +51,7 @@ func (h *UserHandler) insertUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Hash the password before saving
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		log.Println(err)
 		errorRes := Response{
@@ -53,7 +63,12 @@ func (h *UserHandler) insertUser(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(errorRes)
 		return
 	}
-	newUser.Password = string(hashedPassword)
+	newUser := services.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+		Password:  string(hashedPassword),
+	}
 
 	err = h.Service.InsertUser(newUser)
 	if err != nil {
