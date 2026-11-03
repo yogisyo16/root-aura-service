@@ -13,7 +13,7 @@ import (
 
 // tokenTTL is how long an issued token stays valid. Kept short since there
 // are no refresh tokens yet — the user just logs in again once it expires.
-const tokenTTL = 60 * time.Minute
+const tokenTTL = 120 * time.Minute
 
 type AuthServices interface {
 	GenerateToken(userID string) (string, error)
