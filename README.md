@@ -24,7 +24,7 @@ Available features:
 - Adding details to tasks. (✔️)
 
 In-Progress feature:
-- User authentication and authorization. (✖️)
+- User authentication and authorization. (✔️) (Testing and use JWT)
 - User profile management. (✖️)
 - User collaboration and sharing. (✖️)
 - User notification system. (✖️)
